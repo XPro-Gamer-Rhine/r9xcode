@@ -76,7 +76,7 @@ const BlueprintGrid = ({ activePage, isMobile }: { activePage: Page; isMobile: b
   };
 
   // Page index for seeding so each page has different but stable pattern
-  const pageIdx = ["home.js","about.ts","projects.json","hobbies.sh","contact.css","developer.md"].indexOf(activePage);
+  const pageIdx = ["home.js", "about.ts", "projects.json", "hobbies.sh", "contact.css", "developer.md"].indexOf(activePage);
 
   return (
     <motion.div
@@ -554,7 +554,7 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
       { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " [selectedFile, setSelectedFile] ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " useState", color: "#50fa7b" }, { text: '("App.tsx");', color: "#f1fa8c" }] },
       { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " [openTabs, setOpenTabs] ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " useState", color: "#50fa7b" }, { text: '(["App.tsx"]);', color: "#f1fa8c" }] },
       { tokens: [{ text: "  return", color: "#ff79c6" }, { text: " (", color: "#f8f8f2" }] },
-      { tokens: [{ text: '    <div style={{ background: "rgba(30,31,41,0.70)" }}>',color: "#f8f8f2" }] },
+      { tokens: [{ text: '    <div style={{ background: "rgba(30,31,41,0.70)" }}>', color: "#f8f8f2" }] },
       { tokens: [{ text: "      {/* Activity bar + Explorer sidebar */}", color: "#6272a4" }] },
       { tokens: [{ text: "      {/* Tab bar + syntax-highlighted code */}", color: "#6272a4" }] },
       { tokens: [{ text: "      {/* Dracula status bar */}", color: "#6272a4" }] },
@@ -1100,7 +1100,7 @@ const HobbyNode = ({ hobby, W, H, isDarkMode }: any) => {
             {/* Footer */}
             <div className="px-4 py-2 border-t flex items-center gap-2" style={{ borderColor: `${hobby.color}22` }}>
               <div className="flex gap-1">
-                {[0,1,2].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: hobby.color, opacity: 0.3 + i * 0.3 }} />)}
+                {[0, 1, 2].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: hobby.color, opacity: 0.3 + i * 0.3 }} />)}
               </div>
               <span className="font-mono text-[8px] opacity-30">9 memories</span>
             </div>
@@ -1130,10 +1130,10 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
           </motion.div>
           <div className="absolute bottom-0 right-0 p-3 md:p-8 lg:p-12 flex flex-col items-end z-40">
             <motion.div {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.2 }} className="relative">
-              <h1 className="text-[60px] md:text-[120px] lg:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Fine</h1>
+              <h1 className="text-[60px] md:text-[120px] lg:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">LESS</h1>
             </motion.div>
-            <motion.div {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.4 }} className="relative mt-[-6px] md:mt-[-10px] lg:mt-[-20px]">
-              <h1 className="text-[60px] md:text-[120px] lg:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Thought</h1>
+            <motion.div {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.4 }} className="relative ">
+              <h1 className="text-[60px] md:text-[120px] lg:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb] pt-2">IS MORE</h1>
             </motion.div>
           </div>
         </div>
@@ -1213,16 +1213,26 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
                 const W = 800, H = 420;
                 const cx = 400, cy = 210;
                 const hobbies = [
-                  { name: "Traveling", icon: <Plane size={16} />, x: 60, y: 40, color: isDarkMode ? "#50fa7b" : "#1a7f37",
-                    images: ["https://picsum.photos/seed/t1/200/120","https://picsum.photos/seed/t2/200/120","https://picsum.photos/seed/t3/200/120","https://picsum.photos/seed/t4/200/120","https://picsum.photos/seed/t5/200/120","https://picsum.photos/seed/t6/200/120","https://picsum.photos/seed/t7/200/120","https://picsum.photos/seed/t8/200/120","https://picsum.photos/seed/t9/200/120"] },
-                  { name: "Gaming", icon: <Gamepad2 size={16} />, x: 680, y: 40, color: isDarkMode ? "#ff79c6" : "#cf222e",
-                    images: ["https://picsum.photos/seed/g1/200/120","https://picsum.photos/seed/g2/200/120","https://picsum.photos/seed/g3/200/120","https://picsum.photos/seed/g4/200/120","https://picsum.photos/seed/g5/200/120","https://picsum.photos/seed/g6/200/120","https://picsum.photos/seed/g7/200/120","https://picsum.photos/seed/g8/200/120","https://picsum.photos/seed/g9/200/120"] },
-                  { name: "Anime", icon: <Tv size={16} />, x: 30, y: 340, color: isDarkMode ? "#8be9fd" : "#0550ae",
-                    images: ["https://picsum.photos/seed/a1/200/120","https://picsum.photos/seed/a2/200/120","https://picsum.photos/seed/a3/200/120","https://picsum.photos/seed/a4/200/120","https://picsum.photos/seed/a5/200/120","https://picsum.photos/seed/a6/200/120","https://picsum.photos/seed/a7/200/120","https://picsum.photos/seed/a8/200/120","https://picsum.photos/seed/a9/200/120"] },
-                  { name: "Movies", icon: <Film size={16} />, x: 710, y: 340, color: isDarkMode ? "#ffb86c" : "#9a6700",
-                    images: ["https://picsum.photos/seed/m1/200/120","https://picsum.photos/seed/m2/200/120","https://picsum.photos/seed/m3/200/120","https://picsum.photos/seed/m4/200/120","https://picsum.photos/seed/m5/200/120","https://picsum.photos/seed/m6/200/120","https://picsum.photos/seed/m7/200/120","https://picsum.photos/seed/m8/200/120","https://picsum.photos/seed/m9/200/120"] },
-                  { name: "Sleeping", icon: <Moon size={16} />, x: 340, y: 360, color: isDarkMode ? "#bd93f9" : "#8250df",
-                    images: ["https://picsum.photos/seed/s1/200/120","https://picsum.photos/seed/s2/200/120","https://picsum.photos/seed/s3/200/120","https://picsum.photos/seed/s4/200/120","https://picsum.photos/seed/s5/200/120","https://picsum.photos/seed/s6/200/120","https://picsum.photos/seed/s7/200/120","https://picsum.photos/seed/s8/200/120","https://picsum.photos/seed/s9/200/120"] },
+                  {
+                    name: "Traveling", icon: <Plane size={16} />, x: 60, y: 40, color: isDarkMode ? "#50fa7b" : "#1a7f37",
+                    images: ["https://picsum.photos/seed/t1/200/120", "https://picsum.photos/seed/t2/200/120", "https://picsum.photos/seed/t3/200/120", "https://picsum.photos/seed/t4/200/120", "https://picsum.photos/seed/t5/200/120", "https://picsum.photos/seed/t6/200/120", "https://picsum.photos/seed/t7/200/120", "https://picsum.photos/seed/t8/200/120", "https://picsum.photos/seed/t9/200/120"]
+                  },
+                  {
+                    name: "Gaming", icon: <Gamepad2 size={16} />, x: 680, y: 40, color: isDarkMode ? "#ff79c6" : "#cf222e",
+                    images: ["https://picsum.photos/seed/g1/200/120", "https://picsum.photos/seed/g2/200/120", "https://picsum.photos/seed/g3/200/120", "https://picsum.photos/seed/g4/200/120", "https://picsum.photos/seed/g5/200/120", "https://picsum.photos/seed/g6/200/120", "https://picsum.photos/seed/g7/200/120", "https://picsum.photos/seed/g8/200/120", "https://picsum.photos/seed/g9/200/120"]
+                  },
+                  {
+                    name: "Anime", icon: <Tv size={16} />, x: 30, y: 340, color: isDarkMode ? "#8be9fd" : "#0550ae",
+                    images: ["https://picsum.photos/seed/a1/200/120", "https://picsum.photos/seed/a2/200/120", "https://picsum.photos/seed/a3/200/120", "https://picsum.photos/seed/a4/200/120", "https://picsum.photos/seed/a5/200/120", "https://picsum.photos/seed/a6/200/120", "https://picsum.photos/seed/a7/200/120", "https://picsum.photos/seed/a8/200/120", "https://picsum.photos/seed/a9/200/120"]
+                  },
+                  {
+                    name: "Movies", icon: <Film size={16} />, x: 710, y: 340, color: isDarkMode ? "#ffb86c" : "#9a6700",
+                    images: ["https://picsum.photos/seed/m1/200/120", "https://picsum.photos/seed/m2/200/120", "https://picsum.photos/seed/m3/200/120", "https://picsum.photos/seed/m4/200/120", "https://picsum.photos/seed/m5/200/120", "https://picsum.photos/seed/m6/200/120", "https://picsum.photos/seed/m7/200/120", "https://picsum.photos/seed/m8/200/120", "https://picsum.photos/seed/m9/200/120"]
+                  },
+                  {
+                    name: "Sleeping", icon: <Moon size={16} />, x: 340, y: 360, color: isDarkMode ? "#bd93f9" : "#8250df",
+                    images: ["https://picsum.photos/seed/s1/200/120", "https://picsum.photos/seed/s2/200/120", "https://picsum.photos/seed/s3/200/120", "https://picsum.photos/seed/s4/200/120", "https://picsum.photos/seed/s5/200/120", "https://picsum.photos/seed/s6/200/120", "https://picsum.photos/seed/s7/200/120", "https://picsum.photos/seed/s8/200/120", "https://picsum.photos/seed/s9/200/120"]
+                  },
                 ];
                 const buildPath = (nx: number, ny: number) => `M ${cx} ${cy} L ${nx} ${cy} L ${nx} ${ny}`;
                 return (
@@ -1259,7 +1269,7 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
     case "developer.md":
       return (
         <div className="relative w-full h-full overflow-hidden flex items-center justify-center p-4 md:p-0">
-          <motion.div {...fillInAnimation} className="z-40 relative w-full md:w-auto" style={{ width: "min(90%, 60vw)", height: "min(80%, 60vh)" }}>
+          <motion.div {...fillInAnimation} className="z-40 relative w-full md:w-auto" style={{ width: "min(90%, 80vw)", height: "min(80%, 80vh)" }}>
             <VSCodeEditor />
           </motion.div>
           <div className={bgTextStyles}>Developer</div>
@@ -1309,12 +1319,12 @@ export default function App() {
 
   // Page icons for mobile nav
   const pageIcons: Record<Page, React.ReactNode> = {
-    "home.js":       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-    "about.ts":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-    "projects.json": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
-    "hobbies.sh":    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
-    "contact.css":   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
-    "developer.md":  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+    "home.js": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>,
+    "about.ts": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
+    "projects.json": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>,
+    "hobbies.sh": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" /></svg>,
+    "contact.css": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>,
+    "developer.md": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>,
   };
 
   const dotColors: Record<string, string> = {
