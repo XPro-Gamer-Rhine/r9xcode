@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-line: var(--line);
+}
+
+:root {
+  --bg: #E4E3E0;
+  --ink: #141414;
+  --line: rgba(20, 20, 20, 0.2);
+}
+
+.dark {
+  --bg: #141414;
+  --ink: #E4E3E0;
+  --line: rgba(228, 227, 224, 0.2);
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-ink font-sans overflow-hidden transition-colors duration-300;
+  }
+}
+
+.dashed-grid {
+  background-image: 
+    linear-gradient(to right, var(--color-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: -1px -1px;
+}
+
+.dotted-line-h {
+  background-image: radial-gradient(circle, var(--color-ink) 1px, transparent 1px);
+  background-size: 4px 100%;
+  background-repeat: repeat-x;
+  height: 1px;
+}
+
+.dotted-line-v {
+  background-image: radial-gradient(circle, var(--color-ink) 1px, transparent 1px);
+  background-size: 100% 4px;
+  background-repeat: repeat-y;
+  width: 1px;
+}
+
+.ascii-pattern-dots {
+  background-image: radial-gradient(var(--color-ink) 1px, transparent 1px);
+  background-size: 4px 4px;
+}
+
+.ascii-pattern-plus {
+  background-image: 
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 10px 10px;
+}
+
+.ascii-pattern-cross {
+  background: 
+    linear-gradient(45deg, transparent 45%, var(--color-line) 45%, var(--color-line) 55%, transparent 55%),
+    linear-gradient(-45deg, transparent 45%, var(--color-line) 45%, var(--color-line) 55%, transparent 55%);
+  background-size: 10px 10px;
+}
+
+@layer utilities {
+  @keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+    100% { transform: translate(0); }
+  }
+
+  .animate-glitch {
+    animation: glitch 0.2s infinite;
+    animation-timing-function: steps(2, end);
+  }
+
+  .glitch-hover:hover {
+    animation: glitch 0.3s infinite;
+    animation-timing-function: steps(1, end);
+  }
+}
