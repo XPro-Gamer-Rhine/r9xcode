@@ -41,8 +41,8 @@ function seededRandom(seed: number) {
   return x - Math.floor(x);
 }
 
-const BlueprintGrid = ({ activePage }: { activePage: Page }) => {
-  const columns = 5;
+const BlueprintGrid = ({ activePage, isMobile }: { activePage: Page; isMobile: boolean }) => {
+  const columns = isMobile ? 1 : 5;
   const rows = 40;
 
   const getOccupiedZones = (page: Page) => {
@@ -67,8 +67,13 @@ const BlueprintGrid = ({ activePage }: { activePage: Page }) => {
   };
 
   const zones = getOccupiedZones(activePage);
-  const isOccupied = (col: number, row: number) =>
-    zones.some(z => col >= z.colStart && col <= z.colEnd && row >= z.rowStart && row <= z.rowEnd);
+  const isOccupied = (col: number, row: number) => {
+    if (isMobile) {
+      // On mobile, only block content rows regardless of col
+      return zones.some(z => row >= z.rowStart && row <= z.rowEnd);
+    }
+    return zones.some(z => col >= z.colStart && col <= z.colEnd && row >= z.rowStart && row <= z.rowEnd);
+  };
 
   // Page index for seeding so each page has different but stable pattern
   const pageIdx = ["home.js","about.ts","projects.json","hobbies.sh","contact.css","developer.md"].indexOf(activePage);
@@ -79,7 +84,7 @@ const BlueprintGrid = ({ activePage }: { activePage: Page }) => {
       initial={{ clipPath: "inset(0 100% 0 0)" }}
       animate={{ clipPath: "inset(0 0% 0 0)" }}
       transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute top-0 right-0 bottom-0 left-[56px] flex pointer-events-none z-10 overflow-hidden"
+      className={`absolute top-0 right-0 bottom-0 ${isMobile ? "left-0" : "left-[56px]"} flex pointer-events-none z-10 overflow-hidden`}
     >
       {Array.from({ length: columns }).map((_, colIndex) => (
         <div key={colIndex} className="flex-1 border-r border-line/20 flex flex-col">
@@ -101,7 +106,7 @@ const BlueprintGrid = ({ activePage }: { activePage: Page }) => {
 
             const pattern = BLUEPRINT_PATTERNS[Math.floor(r2 * BLUEPRINT_PATTERNS.length)];
             // 1–8 lines, weighted toward lower counts
-            const lineCount = Math.floor(1 + r3 * 10 * seededRandom(seed + 99)); // squaring biases toward 1-3
+            const lineCount = Math.ceil(r3 * r3 * 8); // squaring biases toward 1-3
 
             return (
               <motion.div
@@ -1118,17 +1123,17 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
     case "home.js":
       return (
         <div className="relative w-full h-full">
-          <motion.div {...fillInAnimation} className="absolute top-12 left-24 z-40">
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.85] uppercase">
+          <motion.div {...fillInAnimation} className="absolute top-8 left-4 md:top-12 md:left-24 z-40">
+            <h2 className="text-3xl md:text-5xl lg:text-7xl font-black tracking-tighter leading-[0.85] uppercase">
               Web engineer<br />& creative coder
             </h2>
           </motion.div>
-          <div className="absolute bottom-0 right-0 p-8 md:p-12 flex flex-col items-end z-40">
+          <div className="absolute bottom-0 right-0 p-3 md:p-8 lg:p-12 flex flex-col items-end z-40">
             <motion.div {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.2 }} className="relative">
-              <h1 className="text-[120px] md:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Less</h1>
+              <h1 className="text-[60px] md:text-[120px] lg:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Fine</h1>
             </motion.div>
-            <motion.div {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.4 }} className="relative">
-              <h1 className="text-[120px] md:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Is More</h1>
+            <motion.div {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.4 }} className="relative mt-[-6px] md:mt-[-10px] lg:mt-[-20px]">
+              <h1 className="text-[60px] md:text-[120px] lg:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Thought</h1>
             </motion.div>
           </div>
         </div>
@@ -1136,37 +1141,37 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
 
     case "about.ts":
       return (
-        <div className="relative w-full h-full p-24 pt-32">
+        <div className="relative w-full h-full p-4 pt-8 md:p-24 md:pt-32">
           <motion.div {...fillInAnimation} className="max-w-3xl z-40 relative">
-            <h2 className="text-4xl font-black uppercase mb-8 tracking-tighter">System Profile</h2>
-            <div className="space-y-6 font-mono text-sm leading-relaxed opacity-80">
+            <h2 className="text-2xl md:text-4xl font-black uppercase mb-6 md:mb-8 tracking-tighter">System Profile</h2>
+            <div className="space-y-4 md:space-y-6 font-mono text-xs md:text-sm leading-relaxed opacity-80">
               <p>[ bio ] &gt; I build digital experiences at the intersection of design and engineering. Focusing on high-performance web applications and creative coding experiments.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8 border-t border-line/20">
-                <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 pt-6 md:pt-8 border-t border-line/20">
+                <div className="space-y-4 md:space-y-6">
                   <div>
-                    <h3 className="text-[10px] uppercase tracking-widest opacity-50 mb-4 font-bold flex items-center gap-2"><Code2 size={12} /> Core Stack</h3>
+                    <h3 className="text-[10px] uppercase tracking-widest opacity-50 mb-3 md:mb-4 font-bold flex items-center gap-2"><Code2 size={12} /> Core Stack</h3>
                     <ul className="space-y-1"><li>- React / Next.js / Vue</li><li>- TypeScript / Node / Go</li><li>- Tailwind / Framer / GSAP</li><li>- Three.js / WebGL / GLSL</li></ul>
                   </div>
                   <div>
-                    <h3 className="text-[10px] uppercase tracking-widest opacity-50 mb-4 font-bold flex items-center gap-2"><Database size={12} /> Data & Cloud</h3>
+                    <h3 className="text-[10px] uppercase tracking-widest opacity-50 mb-3 md:mb-4 font-bold flex items-center gap-2"><Database size={12} /> Data & Cloud</h3>
                     <ul className="space-y-1"><li>- PostgreSQL / Redis</li><li>- MongoDB / Firebase</li><li>- AWS / Vercel / Docker</li></ul>
                   </div>
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                   <div>
-                    <h3 className="text-[10px] uppercase tracking-widest opacity-50 mb-4 font-bold flex items-center gap-2"><Cpu size={12} /> Experience</h3>
+                    <h3 className="text-[10px] uppercase tracking-widest opacity-50 mb-3 md:mb-4 font-bold flex items-center gap-2"><Cpu size={12} /> Experience</h3>
                     <ul className="space-y-1"><li>- Creative Dev @ Studio</li><li>- Fullstack Eng @ Tech</li><li>- Open Source Contributor</li></ul>
                   </div>
                   <div>
-                    <h3 className="text-[10px] uppercase tracking-widest opacity-50 mb-4 font-bold flex items-center gap-2"><Layers size={12} /> Tools</h3>
+                    <h3 className="text-[10px] uppercase tracking-widest opacity-50 mb-3 md:mb-4 font-bold flex items-center gap-2"><Layers size={12} /> Tools</h3>
                     <ul className="space-y-1"><li>- Figma / Adobe CC</li><li>- Blender / Spline</li><li>- Git / CI/CD</li></ul>
                   </div>
                 </div>
               </div>
             </div>
           </motion.div>
-          <div className="absolute bottom-12 right-12 z-40">
-            <motion.h1 {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.3 }} className="text-8xl font-black uppercase tracking-tighter opacity-10 [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Rhine</motion.h1>
+          <div className="absolute bottom-4 right-4 md:bottom-12 md:right-12 z-40">
+            <motion.h1 {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.3 }} className="text-5xl md:text-8xl font-black uppercase tracking-tighter opacity-10 [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Rhine</motion.h1>
           </div>
           <div className={bgTextStyles}>About</div>
         </div>
@@ -1176,10 +1181,10 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
       const [hoveredInfo, setHoveredInfo] = useState<{ project: any; rect: DOMRect } | null>(null);
       return (
         <div className="relative w-full h-full">
-          <div className="w-full h-full p-24 pt-32 overflow-y-auto custom-scrollbar">
+          <div className="w-full h-full p-4 pt-8 md:p-24 md:pt-32 overflow-y-auto custom-scrollbar">
             <motion.div {...fillInAnimation} className="relative" style={{ zIndex: 40 }}>
-              <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter">Active Repositories</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
+              <h2 className="text-2xl md:text-4xl font-black uppercase mb-8 md:mb-12 tracking-tighter">Active Repositories</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 md:gap-y-16">
                 {terminalProjects.map((project, i) => (
                   <ProjectItem key={project.name} project={project} index={i} isDarkMode={isDarkMode} onHover={setHoveredInfo} />
                 ))}
@@ -1200,10 +1205,10 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
       return (
         <div className="relative w-full h-full overflow-hidden bg-bg">
           <motion.div {...fillInAnimation} className="z-40 relative h-full flex flex-col">
-            <div className="px-24 pt-32 pb-4 flex-shrink-0">
-              <h2 className="text-4xl font-black uppercase tracking-tighter">System Preferences</h2>
+            <div className="px-4 pt-8 pb-4 md:px-24 md:pt-32 flex-shrink-0">
+              <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tighter">System Preferences</h2>
             </div>
-            <div className="relative flex-1 mx-24 mb-8" style={{ minHeight: 0 }}>
+            <div className="relative flex-1 mx-4 md:mx-24 mb-4 md:mb-8" style={{ minHeight: 0 }}>
               {(() => {
                 const W = 800, H = 420;
                 const cx = 400, cy = 210;
@@ -1253,22 +1258,22 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
 
     case "developer.md":
       return (
-        <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
-          <motion.div {...fillInAnimation} className="z-40 relative" style={{ width: "70%", height: "70%" }}>
+        <div className="relative w-full h-full overflow-hidden flex items-center justify-center p-4 md:p-0">
+          <motion.div {...fillInAnimation} className="z-40 relative w-full md:w-auto" style={{ width: "min(90%, 60vw)", height: "min(80%, 60vh)" }}>
             <VSCodeEditor />
           </motion.div>
-          <div className={bgTextStyles}>Dev</div>
+          <div className={bgTextStyles}>Developer</div>
         </div>
       );
 
     case "contact.css":
       return (
-        <div className="relative w-full h-full flex items-center justify-center p-24">
+        <div className="relative w-full h-full flex items-center justify-center p-6 md:p-24">
           <motion.div {...fillInAnimation} className="text-center z-40 relative">
-            <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-8">Get in touch</h2>
-            <div className="flex flex-col items-center gap-4 font-mono text-lg">
+            <h2 className="text-4xl md:text-6xl lg:text-8xl font-black uppercase tracking-tighter mb-6 md:mb-8">Get in touch</h2>
+            <div className="flex flex-col items-center gap-3 md:gap-4 font-mono text-base md:text-lg">
               <a href="mailto:hello@finethought.js" className="hover:underline opacity-80">hello@finethought.js</a>
-              <div className="flex gap-8 mt-8 opacity-50 text-sm uppercase tracking-widest">
+              <div className="flex gap-6 md:gap-8 mt-6 md:mt-8 opacity-50 text-xs md:text-sm uppercase tracking-widest">
                 <a href="#" className="hover:text-ink transition-colors">Twitter</a>
                 <a href="#" className="hover:text-ink transition-colors">Github</a>
                 <a href="#" className="hover:text-ink transition-colors">LinkedIn</a>
@@ -1287,6 +1292,7 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
 export default function App() {
   const [activePage, setActivePage] = useState<Page>("home.js");
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const pages: Page[] = ["home.js", "about.ts", "projects.json", "hobbies.sh", "contact.css", "developer.md"];
 
   useEffect(() => {
@@ -1294,24 +1300,49 @@ export default function App() {
     else document.documentElement.classList.remove("dark");
   }, [isDarkMode]);
 
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Page icons for mobile nav
+  const pageIcons: Record<Page, React.ReactNode> = {
+    "home.js":       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    "about.ts":      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+    "projects.json": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+    "hobbies.sh":    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+    "contact.css":   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+    "developer.md":  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>,
+  };
+
+  const dotColors: Record<string, string> = {
+    ".js": "bg-yellow-500", ".ts": "bg-blue-500", ".json": "bg-orange-500",
+    ".sh": "bg-emerald-500", ".md": "bg-purple-500", ".css": "bg-pink-500",
+  };
+  const getDotColor = (page: Page) => {
+    const ext = Object.keys(dotColors).find(e => page.endsWith(e));
+    return ext ? dotColors[ext] : "bg-gray-400";
+  };
+
   return (
     <div className="relative w-full h-screen bg-bg selection:bg-ink selection:text-bg" style={{ overflow: "hidden" }}>
-      <div className="absolute top-0 md:top-0 bottom-0 md:bottom-auto left-0 w-full h-12 md:h-9 border-t md:border-t-0 md:border-b border-line flex items-center md:items-end bg-bg/80 backdrop-blur-md z-50">
+
+      {/* ── DESKTOP / TABLET TOP NAV ── */}
+      <div className="hidden md:flex absolute top-0 left-0 w-full h-9 border-b border-line items-end bg-bg/80 backdrop-blur-md z-50">
         <div className="flex h-full overflow-x-auto no-scrollbar">
           {pages.map((page) => (
-            <button
-              key={page}
-              onClick={() => setActivePage(page)}
-              className={`h-full px-4 md:px-6 flex items-center gap-2 border-r border-line font-mono text-[9px] md:text-[10px] uppercase tracking-wider transition-all relative whitespace-nowrap ${activePage === page ? "bg-bg opacity-100" : "bg-ink/5 opacity-40 hover:opacity-70"}`}
-            >
+            <button key={page} onClick={() => setActivePage(page)}
+              className={`h-full px-6 flex items-center gap-2 border-r border-line font-mono text-[10px] uppercase tracking-wider transition-all relative whitespace-nowrap ${activePage === page ? "bg-bg opacity-100" : "bg-ink/5 opacity-40 hover:opacity-70"}`}>
               {activePage === page && <motion.div layoutId="activeTab" className="absolute top-0 left-0 w-full h-[2px] bg-ink z-10" />}
-              <div className={`w-1.5 h-1.5 rounded-full ${page.endsWith(".js") ? "bg-yellow-500" : page.endsWith(".ts") ? "bg-blue-500" : page.endsWith(".json") ? "bg-orange-500" : page.endsWith(".sh") ? "bg-emerald-500" : page.endsWith(".md") ? "bg-purple-500" : "bg-pink-500"} opacity-60`} />
+              <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(page)} opacity-60`} />
               {page}
             </button>
           ))}
         </div>
         <div className="flex-1 h-full flex items-center justify-end px-4 gap-4">
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className="font-mono text-[9px] md:text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity flex items-center gap-2">
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className="font-mono text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity flex items-center gap-2">
             <span className="hidden sm:inline">{isDarkMode ? "[ light_mode ]" : "[ dark_mode ]"}</span>
             <div className="w-3 h-3 rounded-full border border-ink/30 flex items-center justify-center">
               {isDarkMode && <div className="w-1.5 h-1.5 rounded-full bg-ink" />}
@@ -1321,15 +1352,40 @@ export default function App() {
         </div>
       </div>
 
-      <div className="absolute inset-0 dashed-grid opacity-10 pointer-events-none z-0" />
-      <BlueprintGrid activePage={activePage} />
+      {/* ── MOBILE BOTTOM NAV — icon only ── */}
+      <div className="flex md:hidden absolute bottom-0 left-0 w-full h-14 border-t border-line bg-bg/90 backdrop-blur-md z-50 items-center justify-around px-2">
+        {pages.map((page) => (
+          <button key={page} onClick={() => setActivePage(page)}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all ${activePage === page ? "opacity-100" : "opacity-35"}`}>
+            {activePage === page && <motion.div layoutId="mobileActiveTab" className="absolute bottom-0 w-6 h-[2px] bg-ink" />}
+            <div className={`${activePage === page ? "scale-110" : ""} transition-transform`} style={{ color: "currentColor" }}>
+              {pageIcons[page]}
+            </div>
+            <div className={`w-1 h-1 rounded-full ${getDotColor(page)} opacity-70`} />
+          </button>
+        ))}
+        <button onClick={() => setIsDarkMode(!isDarkMode)}
+          className="flex flex-col items-center justify-center gap-1 flex-1 h-full opacity-40">
+          <div className="w-4 h-4 rounded-full border border-ink/50 flex items-center justify-center">
+            {isDarkMode && <div className="w-2 h-2 rounded-full bg-ink" />}
+          </div>
+        </button>
+      </div>
 
-      <div className="absolute left-0 top-0 md:top-9 bottom-12 md:bottom-0 h-full md:h-[calc(100%-36px)] hidden md:flex border-r border-line z-20">
+      {/* ── BACKGROUND ── */}
+      <div className="absolute inset-0 dashed-grid opacity-10 pointer-events-none z-0" />
+      <BlueprintGrid activePage={activePage} isMobile={isMobile} />
+
+      {/* ── LEFT SIDEBAR (desktop only) ── */}
+      <div className="absolute left-0 top-9 bottom-0 h-[calc(100%-36px)] hidden md:flex border-r border-line z-20">
         <div className="w-8 border-r border-line bg-bg/50 backdrop-blur-sm"><LineNumbers /></div>
         <div className="w-6 bg-bg/30"><VerticalSlashes /></div>
       </div>
 
-      <div className="absolute top-0 md:top-9 bottom-12 md:bottom-0 left-0 w-full h-[calc(100%-48px)] md:h-[calc(100%-36px)] overflow-y-auto overflow-x-visible"
+      {/* ── CONTENT AREA ── */}
+      {/* Mobile: full width, top=0, bottom=56px (nav height) */}
+      {/* Desktop: left=56px (sidebar), top=36px (nav), bottom=0 */}
+      <div className="absolute left-0 md:left-0 top-0 md:top-9 bottom-14 md:bottom-0 w-full h-[calc(100%-56px)] md:h-[calc(100%-36px)] overflow-y-auto"
         style={{ overflowX: "visible" }}>
         <AnimatePresence mode="wait">
           <motion.div key={activePage} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="w-full h-full">
@@ -1338,16 +1394,18 @@ export default function App() {
         </AnimatePresence>
       </div>
 
+      {/* ── DECORATIVE LINES ── */}
       <div className="absolute inset-0 pointer-events-none z-10">
         {[15, 35, 55, 75, 90].map((top) => (
           <div key={top} style={{ top: `${top}%` }} className="absolute left-0 w-full dotted-line-h opacity-30" />
         ))}
         {[20, 40, 60, 80].map((left) => (
-          <div key={left} style={{ left: `${left}%` }} className="absolute top-0 h-full dotted-line-v opacity-30" />
+          <div key={left} style={{ left: `${left}%` }} className="absolute top-0 h-full dotted-line-v opacity-20 hidden md:block" />
         ))}
       </div>
 
-      <div className="absolute bottom-4 left-24 font-mono text-[10px] uppercase tracking-widest opacity-30 z-50">
+      {/* ── VERSION LABEL ── */}
+      <div className="absolute bottom-16 md:bottom-4 left-4 md:left-24 font-mono text-[9px] md:text-[10px] uppercase tracking-widest opacity-30 z-50">
         v1.0.0 / 2026 // {activePage}
       </div>
     </div>
