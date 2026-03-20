@@ -35,6 +35,12 @@ const VerticalSlashes = () => (
   </div>
 );
 
+// Seeded pseudo-random so grid is stable per page (no re-render flicker)
+function seededRandom(seed: number) {
+  const x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
 const BlueprintGrid = ({ activePage }: { activePage: Page }) => {
   const columns = 5;
   const rows = 40;
@@ -47,11 +53,12 @@ const BlueprintGrid = ({ activePage }: { activePage: Page }) => {
       case "about.ts":
         return [{ colStart: 0, colEnd: 2, rowStart: 4, rowEnd: 24 }, { colStart: 3, colEnd: 4, rowStart: 30, rowEnd: 38 }, versionZone];
       case "projects.json":
-        return [{ colStart: 0, colEnd: 4, rowStart: 4, rowEnd: 39 }, versionZone];
+        return [{ colStart: 0, colEnd: 4, rowStart: 4, rowEnd: 24 }, versionZone];
       case "hobbies.sh":
         return [{ colStart: 0, colEnd: 4, rowStart: 8, rowEnd: 32 }, versionZone];
       case "developer.md":
-        return [{ colStart: 0, colEnd: 4, rowStart: 4, rowEnd: 38 }, versionZone];
+        // Editor is 60% centered — block approx cols 1-3, rows 10-30
+        return [{ colStart: 1, colEnd: 3, rowStart: 10, rowEnd: 30 }, versionZone];
       case "contact.css":
         return [{ colStart: 1, colEnd: 3, rowStart: 10, rowEnd: 30 }, versionZone];
       default:
@@ -62,6 +69,9 @@ const BlueprintGrid = ({ activePage }: { activePage: Page }) => {
   const zones = getOccupiedZones(activePage);
   const isOccupied = (col: number, row: number) =>
     zones.some(z => col >= z.colStart && col <= z.colEnd && row >= z.rowStart && row <= z.rowEnd);
+
+  // Page index for seeding so each page has different but stable pattern
+  const pageIdx = ["home.js","about.ts","projects.json","hobbies.sh","contact.css","developer.md"].indexOf(activePage);
 
   return (
     <motion.div
@@ -76,20 +86,23 @@ const BlueprintGrid = ({ activePage }: { activePage: Page }) => {
           {Array.from({ length: rows }).map((_, rowIndex) => {
             if (isOccupied(colIndex, rowIndex))
               return <div key={rowIndex} className="flex-1 border-b border-line/5" />;
-            const isBottom = rowIndex > 28;
-            const isTop = rowIndex < 6;
-            const isMid = !isBottom && !isTop;
-            // Random density: mid zones are dense, edges are sparse, with variation per cell
-            const densityRoll = Math.random();
-            const threshold = isMid
-              ? densityRoll > 0.85 ? 0.75 : 0.35   // mid: mostly show, occasional dense clusters
-              : isTop
-                ? densityRoll > 0.7 ? 0.15 : 0.55      // top: mostly sparse
-                : densityRoll > 0.6 ? 0.2 : 0.65;      // bottom: mostly sparse
-            const show = Math.random() > threshold;
-            if (!show) return <div key={rowIndex} className="flex-1 border-b border-line/5" />;
-            const pattern = BLUEPRINT_PATTERNS[Math.floor(Math.random() * BLUEPRINT_PATTERNS.length)];
-            const lineCount = Math.floor(Math.random() * 2) + 1;
+
+            // Stable seed per cell per page
+            const seed = pageIdx * 10000 + colIndex * 1000 + rowIndex * 7;
+            const r1 = seededRandom(seed);
+            const r2 = seededRandom(seed + 1);
+            const r3 = seededRandom(seed + 2);
+
+            // Procedural density: every free cell CAN have lines
+            // Edge rows (very top/bottom) are sparse, mid is denser
+            const isEdge = rowIndex < 3 || rowIndex > 36;
+            const showChance = isEdge ? 0.25 : 0.72;
+            if (r1 > showChance) return <div key={rowIndex} className="flex-1 border-b border-line/5" />;
+
+            const pattern = BLUEPRINT_PATTERNS[Math.floor(r2 * BLUEPRINT_PATTERNS.length)];
+            // 1–8 lines, weighted toward lower counts
+            const lineCount = Math.floor(1 + r3 * 10 * seededRandom(seed + 99)); // squaring biases toward 1-3
+
             return (
               <motion.div
                 key={rowIndex}
@@ -468,49 +481,79 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
       { tokens: [{ text: "import", color: "#ff79c6" }, { text: " { useState, useEffect, useRef } ", color: "#f8f8f2" }, { text: "from", color: "#ff79c6" }, { text: ' "react"', color: "#f1fa8c" }, { text: ";", color: "#f8f8f2" }] },
       { tokens: [{ text: "import", color: "#ff79c6" }, { text: " { motion, AnimatePresence } ", color: "#f8f8f2" }, { text: "from", color: "#ff79c6" }, { text: ' "motion/react"', color: "#f1fa8c" }, { text: ";", color: "#f8f8f2" }] },
       { tokens: [{ text: "import", color: "#ff79c6" }, { text: " {", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  Code2, Cpu, Database, Layers,", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  Plane, Gamepad2, Tv, Film, Moon,", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  ChevronRight, ChevronDown, FileCode, FileJson, FileCog,", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  FileText, Terminal, Folder", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  Code2, Cpu, Database, Layers, Plane, Gamepad2,", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  Tv, Film, Moon, ChevronRight, ChevronDown,", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  FileCode, FileJson, FileCog, FileText,", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  Terminal, Folder", color: "#f8f8f2" }] },
       { tokens: [{ text: "} ", color: "#f8f8f2" }, { text: "from", color: "#ff79c6" }, { text: ' "lucide-react"', color: "#f1fa8c" }, { text: ";", color: "#f8f8f2" }] },
       { tokens: [] },
-      { tokens: [{ text: "type", color: "#ff79c6" }, { text: " Page ", color: "#8be9fd" }, { text: "=", color: "#ff79c6" }, { text: ' "home.js"', color: "#f1fa8c" }, { text: " | ", color: "#f8f8f2" }, { text: '"about.ts"', color: "#f1fa8c" }, { text: " | ", color: "#f8f8f2" }, { text: '"projects.json"', color: "#f1fa8c" }] },
+      { tokens: [{ text: "type", color: "#ff79c6" }, { text: " Page", color: "#8be9fd" }, { text: " = ", color: "#f8f8f2" }, { text: '"home.js"', color: "#f1fa8c" }, { text: " | ", color: "#f8f8f2" }, { text: '"about.ts"', color: "#f1fa8c" }, { text: " | ", color: "#f8f8f2" }, { text: '"projects.json"', color: "#f1fa8c" }] },
       { tokens: [{ text: "  | ", color: "#f8f8f2" }, { text: '"hobbies.sh"', color: "#f1fa8c" }, { text: " | ", color: "#f8f8f2" }, { text: '"contact.css"', color: "#f1fa8c" }, { text: " | ", color: "#f8f8f2" }, { text: '"developer.md"', color: "#f1fa8c" }, { text: ";", color: "#f8f8f2" }] },
       { tokens: [] },
-      { tokens: [{ text: "const", color: "#ff79c6" }, { text: " BLUEPRINT_PATTERNS ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " [", color: "#f8f8f2" }] },
-      { tokens: [{ text: '  { char: ', color: "#f8f8f2" }, { text: '"/"', color: "#f1fa8c" }, { text: ", prefix: ", color: "#f8f8f2" }, { text: '"/"', color: "#f1fa8c" }, { text: ", suffix: ", color: "#f8f8f2" }, { text: '"/"', color: "#f1fa8c" }, { text: " },", color: "#f8f8f2" }] },
-      { tokens: [{ text: '  { char: ', color: "#f8f8f2" }, { text: '"*"', color: "#f1fa8c" }, { text: ", prefix: ", color: "#f8f8f2" }, { text: '"/*"', color: "#f1fa8c" }, { text: ", suffix: ", color: "#f8f8f2" }, { text: '"*/"', color: "#f1fa8c" }, { text: " },", color: "#f8f8f2" }] },
+      { tokens: [{ text: "// Seeded pseudo-random for stable blueprint grid", color: "#6272a4" }] },
+      { tokens: [{ text: "function", color: "#ff79c6" }, { text: " seededRandom", color: "#50fa7b" }, { text: "(seed:", color: "#f8f8f2" }, { text: " number", color: "#8be9fd" }, { text: ") {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " x ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " Math.sin(seed + ", color: "#f8f8f2" }, { text: "1", color: "#bd93f9" }, { text: ") * ", color: "#f8f8f2" }, { text: "10000", color: "#bd93f9" }, { text: ";", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  return", color: "#ff79c6" }, { text: " x - Math.floor(x);", color: "#f8f8f2" }] },
+      { tokens: [{ text: "}", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: "const", color: "#ff79c6" }, { text: " BLUEPRINT_PATTERNS ", color: "#f8f8f2" }, { text: "= [", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  { char: "/"', color: "#f1fa8c" }, { text: ', prefix: "/"', color: "#f1fa8c" }, { text: ', suffix: "/" },', color: "#f1fa8c" }] },
+      { tokens: [{ text: '  { char: "*"', color: "#f1fa8c" }, { text: ', prefix: "/*"', color: "#f1fa8c" }, { text: ', suffix: "*/" },', color: "#f1fa8c" }] },
+      { tokens: [{ text: '  { char: "-"', color: "#f1fa8c" }, { text: ', prefix: ""', color: "#f1fa8c" }, { text: ', suffix: "" },', color: "#f1fa8c" }] },
+      { tokens: [{ text: '  { char: "."', color: "#f1fa8c" }, { text: ', prefix: ""', color: "#f1fa8c" }, { text: ', suffix: "" },', color: "#f1fa8c" }] },
       { tokens: [{ text: "];", color: "#f8f8f2" }] },
       { tokens: [] },
-      { tokens: [{ text: "const", color: "#ff79c6" }, { text: " LineNumbers ", color: "#50fa7b" }, { text: "= () =>", color: "#ff79c6" }, { text: " (", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  <", color: "#f8f8f2" }, { text: "div", color: "#ff79c6" }, { text: " className", color: "#8be9fd" }, { text: '="flex flex-col font-mono opacity-30"', color: "#f1fa8c" }, { text: ">", color: "#f8f8f2" }] },
-      { tokens: [{ text: "    {Array.from({ length: ", color: "#f8f8f2" }, { text: "100", color: "#bd93f9" }, { text: " }).map((_, i) => (", color: "#f8f8f2" }] },
-      { tokens: [{ text: "      <", color: "#f8f8f2" }, { text: "div", color: "#ff79c6" }, { text: " key", color: "#8be9fd" }, { text: "={i}", color: "#f8f8f2" }, { text: " className", color: "#8be9fd" }, { text: '="h-[20px]"', color: "#f1fa8c" }, { text: ">{i + ", color: "#f8f8f2" }, { text: "1", color: "#bd93f9" }, { text: "}</", color: "#f8f8f2" }, { text: "div", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
-      { tokens: [{ text: "    ))}", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  </", color: "#f8f8f2" }, { text: "div", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
-      { tokens: [{ text: ");", color: "#f8f8f2" }] },
-      { tokens: [] },
-      { tokens: [{ text: "const", color: "#ff79c6" }, { text: " BlueprintGrid ", color: "#50fa7b" }, { text: "= ({ activePage }: { activePage:", color: "#f8f8f2" }, { text: " Page", color: "#8be9fd" }, { text: " }) => {", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " columns ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " ", color: "#f8f8f2" }, { text: "5", color: "#bd93f9" }, { text: ";", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " rows ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " ", color: "#f8f8f2" }, { text: "40", color: "#bd93f9" }, { text: ";", color: "#f8f8f2" }] },
-      { tokens: [] },
-      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " getOccupiedZones ", color: "#50fa7b" }, { text: "= (page:", color: "#f8f8f2" }, { text: " Page", color: "#8be9fd" }, { text: ") => {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "const", color: "#ff79c6" }, { text: " BlueprintGrid", color: "#50fa7b" }, { text: " = ({ activePage }: { activePage:", color: "#f8f8f2" }, { text: " Page", color: "#8be9fd" }, { text: " }) => {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " getOccupiedZones ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " (page:", color: "#f8f8f2" }, { text: " Page", color: "#8be9fd" }, { text: ") => {", color: "#f8f8f2" }] },
       { tokens: [{ text: "    switch", color: "#ff79c6" }, { text: " (page) {", color: "#f8f8f2" }] },
       { tokens: [{ text: "      case", color: "#ff79c6" }, { text: ' "home.js"', color: "#f1fa8c" }, { text: ":", color: "#f8f8f2" }] },
-      { tokens: [{ text: "        return", color: "#ff79c6" }, { text: " [{ colStart:", color: "#f8f8f2" }, { text: " 0", color: "#bd93f9" }, { text: ", rowStart:", color: "#f8f8f2" }, { text: " 2", color: "#bd93f9" }, { text: ", rowEnd:", color: "#f8f8f2" }, { text: " 10", color: "#bd93f9" }, { text: " }];", color: "#f8f8f2" }] },
-      { tokens: [{ text: "      default:", color: "#ff79c6" }] },
-      { tokens: [{ text: "        return", color: "#ff79c6" }, { text: " [];", color: "#f8f8f2" }] },
+      { tokens: [{ text: "        return", color: "#ff79c6" }, { text: " [{ colStart:", color: "#f8f8f2" }, { text: " 0", color: "#bd93f9" }, { text: ", colEnd:", color: "#f8f8f2" }, { text: " 1", color: "#bd93f9" }, { text: ", rowStart:", color: "#f8f8f2" }, { text: " 2", color: "#bd93f9" }, { text: ", rowEnd:", color: "#f8f8f2" }, { text: " 10", color: "#bd93f9" }, { text: " }];", color: "#f8f8f2" }] },
+      { tokens: [{ text: "      case", color: "#ff79c6" }, { text: ' "about.ts"', color: "#f1fa8c" }, { text: ":", color: "#f8f8f2" }] },
+      { tokens: [{ text: "        return", color: "#ff79c6" }, { text: " [{ colStart:", color: "#f8f8f2" }, { text: " 0", color: "#bd93f9" }, { text: ", colEnd:", color: "#f8f8f2" }, { text: " 2", color: "#bd93f9" }, { text: ", rowStart:", color: "#f8f8f2" }, { text: " 4", color: "#bd93f9" }, { text: ", rowEnd:", color: "#f8f8f2" }, { text: " 24", color: "#bd93f9" }, { text: " }];", color: "#f8f8f2" }] },
+      { tokens: [{ text: "      default:", color: "#ff79c6" }, { text: " return [];", color: "#f8f8f2" }] },
       { tokens: [{ text: "    }", color: "#f8f8f2" }] },
       { tokens: [{ text: "  };", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  // render 5 cols × 40 rows of blueprint lines...", color: "#6272a4" }] },
+      { tokens: [{ text: "};", color: "#f8f8f2" }] },
       { tokens: [] },
+      { tokens: [{ text: "// Terminal popup shown on project hover", color: "#6272a4" }] },
+      { tokens: [{ text: "const", color: "#ff79c6" }, { text: " TerminalPopup", color: "#50fa7b" }, { text: " = ({ project, rect, isDarkMode }:", color: "#f8f8f2" }, { text: " any", color: "#8be9fd" }, { text: ") => {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " [typedDesc, setTypedDesc] ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " useState", color: "#50fa7b" }, { text: '("");', color: "#f1fa8c" }] },
+      { tokens: [{ text: "  // typewriter effect + image slideshow...", color: "#6272a4" }] },
       { tokens: [{ text: "  return", color: "#ff79c6" }, { text: " (", color: "#f8f8f2" }] },
-      { tokens: [{ text: "    <", color: "#f8f8f2" }, { text: "motion.div", color: "#ff79c6" }, { text: " key", color: "#8be9fd" }, { text: "={activePage}", color: "#f8f8f2" }] },
-      { tokens: [{ text: '      initial', color: "#8be9fd" }, { text: "={{ clipPath:", color: "#f8f8f2" }, { text: ' "inset(0 100% 0 0)"', color: "#f1fa8c" }, { text: " }}", color: "#f8f8f2" }] },
-      { tokens: [{ text: '      animate', color: "#8be9fd" }, { text: "={{ clipPath:", color: "#f8f8f2" }, { text: ' "inset(0 0% 0 0)"', color: "#f1fa8c" }, { text: " }}", color: "#f8f8f2" }] },
-      { tokens: [{ text: "      className", color: "#8be9fd" }, { text: '="absolute inset-0 flex z-10"', color: "#f1fa8c" }] },
-      { tokens: [{ text: "    >", color: "#f8f8f2" }] },
-      { tokens: [{ text: "      {/* columns and rows rendering */}", color: "#6272a4" }] },
-      { tokens: [{ text: "    </", color: "#f8f8f2" }, { text: "motion.div", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    <div style={{ position: "fixed", zIndex:', color: "#f8f8f2" }, { text: " 999999", color: "#bd93f9" }, { text: " }}>", color: "#f8f8f2" }] },
+      { tokens: [{ text: "      {/* Dracula-themed terminal UI */}", color: "#6272a4" }] },
+      { tokens: [{ text: "    </div>", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  );", color: "#f8f8f2" }] },
+      { tokens: [{ text: "};", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: "// Hobby node with auto-scrolling image gallery", color: "#6272a4" }] },
+      { tokens: [{ text: "const", color: "#ff79c6" }, { text: " ScrollRow", color: "#50fa7b" }, { text: " = ({ images, direction, color }:", color: "#f8f8f2" }, { text: " any", color: "#8be9fd" }, { text: ") => (", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  <motion.div animate={{ x:", color: "#f8f8f2" }, { text: " direction ", color: "#f8f8f2" }, { text: "===", color: "#ff79c6" }, { text: ' "left"', color: "#f1fa8c" }] },
+      { tokens: [{ text: '    ? ["0%", "-33.33%"] : ["-33.33%", "0%"]', color: "#f1fa8c" }] },
+      { tokens: [{ text: "  }} transition={{ duration:", color: "#f8f8f2" }, { text: " 22", color: "#bd93f9" }, { text: ", repeat:", color: "#f8f8f2" }, { text: " Infinity", color: "#8be9fd" }, { text: " }}>", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    {/* tripled images for seamless loop */}", color: "#6272a4" }] },
+      { tokens: [{ text: "  </motion.div>", color: "#f8f8f2" }] },
+      { tokens: [{ text: ");", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: "const", color: "#ff79c6" }, { text: " HobbyNode", color: "#50fa7b" }, { text: " = ({ hobby, W, H, isDarkMode }:", color: "#f8f8f2" }, { text: " any", color: "#8be9fd" }, { text: ") => {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " [hovered, setHovered] ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " useState", color: "#50fa7b" }, { text: "(", color: "#f8f8f2" }, { text: "false", color: "#bd93f9" }, { text: ");", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  // on hover: compute fixed card position, show gallery", color: "#6272a4" }] },
+      { tokens: [{ text: "  return", color: "#ff79c6" }, { text: " (", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    <> <NodeBox /> {hovered && <GalleryCard />} </>", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  );", color: "#f8f8f2" }] },
+      { tokens: [{ text: "};", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: "// VSCode-style editor for developer.md page", color: "#6272a4" }] },
+      { tokens: [{ text: "const", color: "#ff79c6" }, { text: " VSCodeEditor", color: "#50fa7b" }, { text: " = () => {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " [selectedFile, setSelectedFile] ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " useState", color: "#50fa7b" }, { text: '("App.tsx");', color: "#f1fa8c" }] },
+      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " [openTabs, setOpenTabs] ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " useState", color: "#50fa7b" }, { text: '(["App.tsx"]);', color: "#f1fa8c" }] },
+      { tokens: [{ text: "  return", color: "#ff79c6" }, { text: " (", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    <div style={{ background: "rgba(30,31,41,0.70)" }}>',color: "#f8f8f2" }] },
+      { tokens: [{ text: "      {/* Activity bar + Explorer sidebar */}", color: "#6272a4" }] },
+      { tokens: [{ text: "      {/* Tab bar + syntax-highlighted code */}", color: "#6272a4" }] },
+      { tokens: [{ text: "      {/* Dracula status bar */}", color: "#6272a4" }] },
+      { tokens: [{ text: "    </div>", color: "#f8f8f2" }] },
       { tokens: [{ text: "  );", color: "#f8f8f2" }] },
       { tokens: [{ text: "};", color: "#f8f8f2" }] },
       { tokens: [] },
@@ -518,21 +561,20 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
       { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " [activePage, setActivePage] ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " useState", color: "#50fa7b" }, { text: "<", color: "#f8f8f2" }, { text: "Page", color: "#8be9fd" }, { text: '>("home.js");', color: "#f8f8f2" }] },
       { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " [isDarkMode, setIsDarkMode] ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: " useState", color: "#50fa7b" }, { text: "(", color: "#f8f8f2" }, { text: "false", color: "#bd93f9" }, { text: ");", color: "#f8f8f2" }] },
       { tokens: [] },
-      { tokens: [{ text: "  const", color: "#ff79c6" }, { text: " pages:", color: "#f8f8f2" }, { text: " Page", color: "#8be9fd" }, { text: "[] ", color: "#f8f8f2" }, { text: "=", color: "#ff79c6" }, { text: ' ["home.js", "about.ts", "projects.json",', color: "#f1fa8c" }] },
-      { tokens: [{ text: '    "hobbies.sh", "contact.css", "developer.md"];', color: "#f1fa8c" }] },
-      { tokens: [] },
       { tokens: [{ text: "  useEffect", color: "#50fa7b" }, { text: "(() => {", color: "#f8f8f2" }] },
-      { tokens: [{ text: "    if", color: "#ff79c6" }, { text: " (isDarkMode) document.documentElement.classList.add(", color: "#f8f8f2" }, { text: '"dark"', color: "#f1fa8c" }, { text: ");", color: "#f8f8f2" }] },
-      { tokens: [{ text: "    else", color: "#ff79c6" }, { text: " document.documentElement.classList.remove(", color: "#f8f8f2" }, { text: '"dark"', color: "#f1fa8c" }, { text: ");", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    document.documentElement.classList.toggle(", color: "#f8f8f2" }, { text: '"dark"', color: "#f1fa8c" }, { text: ", isDarkMode);", color: "#f8f8f2" }] },
       { tokens: [{ text: "  }, [isDarkMode]);", color: "#f8f8f2" }] },
       { tokens: [] },
       { tokens: [{ text: "  return", color: "#ff79c6" }, { text: " (", color: "#f8f8f2" }] },
-      { tokens: [{ text: "    <", color: "#f8f8f2" }, { text: "div", color: "#ff79c6" }, { text: " className", color: "#8be9fd" }, { text: '="relative w-full h-screen bg-bg overflow-hidden"', color: "#f1fa8c" }, { text: ">", color: "#f8f8f2" }] },
-      { tokens: [{ text: "      <", color: "#f8f8f2" }, { text: "BlueprintGrid", color: "#50fa7b" }, { text: " activePage", color: "#8be9fd" }, { text: "={activePage} />", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    <div className="relative w-full h-screen bg-bg">', color: "#f8f8f2" }] },
+      { tokens: [{ text: "      {/* Tab nav: home.js about.ts projects.json */}", color: "#6272a4" }] },
+      { tokens: [{ text: "      {/* BlueprintGrid — procedural line pattern */}", color: "#6272a4" }] },
+      { tokens: [{ text: "      {/* Left sidebar: line numbers + slashes */}", color: "#6272a4" }] },
       { tokens: [{ text: "      <", color: "#f8f8f2" }, { text: "AnimatePresence", color: "#50fa7b" }, { text: " mode", color: "#8be9fd" }, { text: '="wait"', color: "#f1fa8c" }, { text: ">", color: "#f8f8f2" }] },
-      { tokens: [{ text: "        <", color: "#f8f8f2" }, { text: "PageContent", color: "#50fa7b" }, { text: " activePage", color: "#8be9fd" }, { text: "={activePage} />", color: "#f8f8f2" }] },
+      { tokens: [{ text: "        <", color: "#f8f8f2" }, { text: "PageContent", color: "#50fa7b" }, { text: " activePage", color: "#8be9fd" }, { text: "={activePage}", color: "#f8f8f2" }] },
+      { tokens: [{ text: "          isDarkMode", color: "#8be9fd" }, { text: "={isDarkMode} />", color: "#f8f8f2" }] },
       { tokens: [{ text: "      </", color: "#f8f8f2" }, { text: "AnimatePresence", color: "#50fa7b" }, { text: ">", color: "#f8f8f2" }] },
-      { tokens: [{ text: "    </", color: "#f8f8f2" }, { text: "div", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    </div>", color: "#f8f8f2" }] },
       { tokens: [{ text: "  );", color: "#f8f8f2" }] },
       { tokens: [{ text: "}", color: "#f8f8f2" }] },
     ],
@@ -545,14 +587,34 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
       { tokens: [{ text: "@tailwind", color: "#ff79c6" }, { text: " utilities;", color: "#f8f8f2" }] },
       { tokens: [] },
       { tokens: [{ text: ":root", color: "#50fa7b" }, { text: " {", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  --color-bg:", color: "#8be9fd" }, { text: " #ffffff;", color: "#f1fa8c" }] },
+      { tokens: [{ text: "  --color-bg:", color: "#8be9fd" }, { text: " #f5f5f0;", color: "#f1fa8c" }] },
       { tokens: [{ text: "  --color-ink:", color: "#8be9fd" }, { text: " #111111;", color: "#f1fa8c" }] },
       { tokens: [{ text: "  --color-line:", color: "#8be9fd" }, { text: " #888888;", color: "#f1fa8c" }] },
       { tokens: [{ text: "}", color: "#f8f8f2" }] },
       { tokens: [] },
       { tokens: [{ text: ".dark", color: "#50fa7b" }, { text: " {", color: "#f8f8f2" }] },
-      { tokens: [{ text: "  --color-bg:", color: "#8be9fd" }, { text: " #0f0f0f;", color: "#f1fa8c" }] },
-      { tokens: [{ text: "  --color-ink:", color: "#8be9fd" }, { text: " #eeeeee;", color: "#f1fa8c" }] },
+      { tokens: [{ text: "  --color-bg:", color: "#8be9fd" }, { text: " #0d0d0d;", color: "#f1fa8c" }] },
+      { tokens: [{ text: "  --color-ink:", color: "#8be9fd" }, { text: " #f0f0f0;", color: "#f1fa8c" }] },
+      { tokens: [{ text: "  --color-line:", color: "#8be9fd" }, { text: " #444444;", color: "#f1fa8c" }] },
+      { tokens: [{ text: "}", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: ".no-scrollbar::-webkit-scrollbar", color: "#50fa7b" }, { text: " { display:", color: "#8be9fd" }, { text: " none", color: "#f1fa8c" }, { text: "; }", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: ".dashed-grid", color: "#50fa7b" }, { text: " {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  background-image:", color: "#8be9fd" }, { text: " repeating-linear-gradient(", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    0deg, var(--color-line) 0,", color: "#f1fa8c" }] },
+      { tokens: [{ text: "    var(--color-line) 1px, transparent 1px,", color: "#f1fa8c" }] },
+      { tokens: [{ text: "    transparent 40px", color: "#f1fa8c" }] },
+      { tokens: [{ text: "  );", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  background-size:", color: "#8be9fd" }, { text: " 40px 40px;", color: "#f1fa8c" }] },
+      { tokens: [{ text: "}", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: ".dotted-line-h", color: "#50fa7b" }, { text: " {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  border-top:", color: "#8be9fd" }, { text: " 1px dashed var(--color-line);", color: "#f1fa8c" }] },
+      { tokens: [{ text: "}", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: ".dotted-line-v", color: "#50fa7b" }, { text: " {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  border-left:", color: "#8be9fd" }, { text: " 1px dashed var(--color-line);", color: "#f1fa8c" }] },
       { tokens: [{ text: "}", color: "#f8f8f2" }] },
     ],
   },
@@ -564,7 +626,7 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
       { tokens: [{ text: "import", color: "#ff79c6" }, { text: " App ", color: "#f8f8f2" }, { text: "from", color: "#ff79c6" }, { text: ' "./App"', color: "#f1fa8c" }, { text: ";", color: "#f8f8f2" }] },
       { tokens: [{ text: "import", color: "#ff79c6" }, { text: ' "./index.css"', color: "#f1fa8c" }, { text: ";", color: "#f8f8f2" }] },
       { tokens: [] },
-      { tokens: [{ text: "ReactDOM", color: "#8be9fd" }, { text: ".createRoot(", color: "#f8f8f2" }, { text: "document", color: "#8be9fd" }, { text: ".getElementById(", color: "#f8f8f2" }, { text: '"root"', color: "#f1fa8c" }, { text: ")!).render(", color: "#f8f8f2" }] },
+      { tokens: [{ text: "ReactDOM.createRoot(", color: "#f8f8f2" }, { text: "document", color: "#8be9fd" }, { text: ".getElementById(", color: "#f8f8f2" }, { text: '"root"', color: "#f1fa8c" }, { text: ")!).render(", color: "#f8f8f2" }] },
       { tokens: [{ text: "  <", color: "#f8f8f2" }, { text: "React.StrictMode", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
       { tokens: [{ text: "    <", color: "#f8f8f2" }, { text: "App", color: "#50fa7b" }, { text: " />", color: "#f8f8f2" }] },
       { tokens: [{ text: "  </", color: "#f8f8f2" }, { text: "React.StrictMode", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
@@ -574,19 +636,32 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
   ".env.example": {
     lang: "env",
     lines: [
-      { tokens: [{ text: "# Environment variables", color: "#6272a4" }] },
-      { tokens: [{ text: "VITE_APP_TITLE", color: "#ff79c6" }, { text: "=", color: "#f8f8f2" }, { text: "FineTought Portfolio", color: "#f1fa8c" }] },
-      { tokens: [{ text: "VITE_API_URL", color: "#ff79c6" }, { text: "=", color: "#f8f8f2" }, { text: "https://api.finethought.dev", color: "#f1fa8c" }] },
-      { tokens: [{ text: "VITE_GA_ID", color: "#ff79c6" }, { text: "=", color: "#f8f8f2" }, { text: "G-XXXXXXXXXX", color: "#f1fa8c" }] },
+      { tokens: [{ text: "# Copy to .env and fill in your values", color: "#6272a4" }] },
+      { tokens: [] },
+      { tokens: [{ text: "VITE_APP_TITLE", color: "#ff79c6" }, { text: "=", color: "#f8f8f2" }, { text: "Fine Thought Portfolio", color: "#f1fa8c" }] },
+      { tokens: [{ text: "VITE_APP_VERSION", color: "#ff79c6" }, { text: "=", color: "#f8f8f2" }, { text: "1.0.0", color: "#f1fa8c" }] },
+      { tokens: [{ text: "VITE_CONTACT_EMAIL", color: "#ff79c6" }, { text: "=", color: "#f8f8f2" }, { text: "hello@finethought.dev", color: "#f1fa8c" }] },
     ],
   },
   ".gitignore": {
     lang: "git",
     lines: [
+      { tokens: [{ text: "# Dependencies", color: "#6272a4" }] },
       { tokens: [{ text: "node_modules/", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: "# Build output", color: "#6272a4" }] },
       { tokens: [{ text: "dist/", color: "#f8f8f2" }] },
+      { tokens: [{ text: "build/", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: "# Environment", color: "#6272a4" }] },
       { tokens: [{ text: ".env", color: "#f8f8f2" }] },
+      { tokens: [{ text: ".env.local", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: "# OS", color: "#6272a4" }] },
       { tokens: [{ text: ".DS_Store", color: "#f8f8f2" }] },
+      { tokens: [{ text: "Thumbs.db", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: "# Logs", color: "#6272a4" }] },
       { tokens: [{ text: "*.log", color: "#f8f8f2" }] },
       { tokens: [{ text: ".vite/", color: "#f8f8f2" }] },
     ],
@@ -598,11 +673,13 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
       { tokens: [{ text: "<", color: "#f8f8f2" }, { text: "html", color: "#ff79c6" }, { text: " lang", color: "#8be9fd" }, { text: '="en"', color: "#f1fa8c" }, { text: ">", color: "#f8f8f2" }] },
       { tokens: [{ text: "  <", color: "#f8f8f2" }, { text: "head", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
       { tokens: [{ text: "    <", color: "#f8f8f2" }, { text: "meta", color: "#ff79c6" }, { text: " charset", color: "#8be9fd" }, { text: '="UTF-8"', color: "#f1fa8c" }, { text: " />", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    <", color: "#f8f8f2" }, { text: "meta", color: "#ff79c6" }, { text: " name", color: "#8be9fd" }, { text: '="viewport"', color: "#f1fa8c" }, { text: " content", color: "#8be9fd" }, { text: '="width=device-width, initial-scale=1.0"', color: "#f1fa8c" }, { text: " />", color: "#f8f8f2" }] },
       { tokens: [{ text: "    <", color: "#f8f8f2" }, { text: "title", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }, { text: "Fine Thought", color: "#f8f8f2" }, { text: "</", color: "#f8f8f2" }, { text: "title", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    <", color: "#f8f8f2" }, { text: "link", color: "#ff79c6" }, { text: " rel", color: "#8be9fd" }, { text: '="icon"', color: "#f1fa8c" }, { text: " href", color: "#8be9fd" }, { text: '="/favicon.ico"', color: "#f1fa8c" }, { text: " />", color: "#f8f8f2" }] },
       { tokens: [{ text: "  </", color: "#f8f8f2" }, { text: "head", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
       { tokens: [{ text: "  <", color: "#f8f8f2" }, { text: "body", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
       { tokens: [{ text: "    <", color: "#f8f8f2" }, { text: "div", color: "#ff79c6" }, { text: " id", color: "#8be9fd" }, { text: '="root"', color: "#f1fa8c" }, { text: "></", color: "#f8f8f2" }, { text: "div", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
-      { tokens: [{ text: "    <", color: "#f8f8f2" }, { text: "script", color: "#ff79c6" }, { text: ' type="module" src="/src/main.tsx"', color: "#8be9fd" }, { text: "></", color: "#f8f8f2" }, { text: "script", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    <', color: "#f8f8f2" }, { text: "script", color: "#ff79c6" }, { text: ' type', color: "#8be9fd" }, { text: '="module"', color: "#f1fa8c" }, { text: ' src', color: "#8be9fd" }, { text: '="/src/main.tsx"', color: "#f1fa8c" }, { text: "></", color: "#f8f8f2" }, { text: "script", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
       { tokens: [{ text: "  </", color: "#f8f8f2" }, { text: "body", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
       { tokens: [{ text: "</", color: "#f8f8f2" }, { text: "html", color: "#ff79c6" }, { text: ">", color: "#f8f8f2" }] },
     ],
@@ -614,7 +691,10 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
       { tokens: [{ text: '  "name"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"finethought-portfolio"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
       { tokens: [{ text: '  "version"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"1.0.0"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
       { tokens: [{ text: '  "author"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"Rhine"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
-      { tokens: [{ text: '  "year"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: "2026", color: "#bd93f9" }] },
+      { tokens: [{ text: '  "year"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: "2026", color: "#bd93f9" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "description"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"Blueprint-aesthetic developer portfolio"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "stack"', color: "#f1fa8c" }, { text: ": [", color: "#f8f8f2" }, { text: '"React"', color: "#50fa7b" }, { text: ", ", color: "#f8f8f2" }, { text: '"TypeScript"', color: "#50fa7b" }, { text: ", ", color: "#f8f8f2" }, { text: '"Framer Motion"', color: "#50fa7b" }, { text: "],", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "theme"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"blueprint"', color: "#50fa7b" }] },
       { tokens: [{ text: "}", color: "#f8f8f2" }] },
     ],
   },
@@ -622,15 +702,26 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
     lang: "json",
     lines: [
       { tokens: [{ text: "{", color: "#f8f8f2" }] },
-      { tokens: [{ text: '  "name"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"portfolio"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "name"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"finethought-portfolio"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "private"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: "true", color: "#bd93f9" }, { text: ",", color: "#f8f8f2" }] },
       { tokens: [{ text: '  "version"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"1.0.0"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "type"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"module"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
       { tokens: [{ text: '  "scripts"', color: "#f1fa8c" }, { text: ": {", color: "#f8f8f2" }] },
       { tokens: [{ text: '    "dev"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"vite"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
-      { tokens: [{ text: '    "build"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"vite build"', color: "#50fa7b" }] },
+      { tokens: [{ text: '    "build"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"tsc -b && vite build"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    "preview"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"vite preview"', color: "#50fa7b" }] },
       { tokens: [{ text: "  },", color: "#f8f8f2" }] },
       { tokens: [{ text: '  "dependencies"', color: "#f1fa8c" }, { text: ": {", color: "#f8f8f2" }] },
-      { tokens: [{ text: '    "react"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"^18.3.0"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
-      { tokens: [{ text: '    "motion"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"^11.0.0"', color: "#50fa7b" }] },
+      { tokens: [{ text: '    "lucide-react"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"^0.383.0"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    "motion"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"^11.2.0"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    "react"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"^18.3.1"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    "react-dom"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"^18.3.1"', color: "#50fa7b" }] },
+      { tokens: [{ text: "  },", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "devDependencies"', color: "#f1fa8c" }, { text: ": {", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    "@vitejs/plugin-react"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"^4.3.4"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    "tailwindcss"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"^3.4.17"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    "typescript"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"~5.6.2"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    "vite"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"^6.0.5"', color: "#50fa7b" }] },
       { tokens: [{ text: "  }", color: "#f8f8f2" }] },
       { tokens: [{ text: "}", color: "#f8f8f2" }] },
     ],
@@ -640,17 +731,31 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
     lines: [
       { tokens: [{ text: "# Fine Thought Portfolio", color: "#ff79c6" }] },
       { tokens: [] },
-      { tokens: [{ text: "> Blueprint-aesthetic developer portfolio", color: "#6272a4" }] },
+      { tokens: [{ text: "> Blueprint-aesthetic developer portfolio built with React + Framer Motion", color: "#6272a4" }] },
+      { tokens: [] },
+      { tokens: [{ text: "## Features", color: "#bd93f9" }] },
+      { tokens: [{ text: "- Procedural blueprint grid with seeded random line density", color: "#f8f8f2" }] },
+      { tokens: [{ text: "- VS Code-style developer page with Dracula theme", color: "#f8f8f2" }] },
+      { tokens: [{ text: "- Computer bus topology diagram for hobbies", color: "#f8f8f2" }] },
+      { tokens: [{ text: "- Dracula terminal hover cards for projects", color: "#f8f8f2" }] },
+      { tokens: [{ text: "- Dark / light mode toggle", color: "#f8f8f2" }] },
       { tokens: [] },
       { tokens: [{ text: "## Stack", color: "#bd93f9" }] },
-      { tokens: [{ text: "- React + TypeScript", color: "#f8f8f2" }] },
-      { tokens: [{ text: "- Tailwind CSS", color: "#f8f8f2" }] },
-      { tokens: [{ text: "- Framer Motion", color: "#f8f8f2" }] },
-      { tokens: [{ text: "- Vite", color: "#f8f8f2" }] },
+      { tokens: [{ text: "- **React 18** + TypeScript", color: "#f8f8f2" }] },
+      { tokens: [{ text: "- **Framer Motion** (motion/react)", color: "#f8f8f2" }] },
+      { tokens: [{ text: "- **Tailwind CSS** v3", color: "#f8f8f2" }] },
+      { tokens: [{ text: "- **Vite** build tool", color: "#f8f8f2" }] },
+      { tokens: [{ text: "- **Lucide React** icons", color: "#f8f8f2" }] },
       { tokens: [] },
-      { tokens: [{ text: "## Run", color: "#bd93f9" }] },
+      { tokens: [{ text: "## Getting Started", color: "#bd93f9" }] },
       { tokens: [{ text: "```bash", color: "#6272a4" }] },
-      { tokens: [{ text: "yarn && yarn dev", color: "#50fa7b" }] },
+      { tokens: [{ text: "yarn install", color: "#50fa7b" }] },
+      { tokens: [{ text: "yarn dev", color: "#50fa7b" }] },
+      { tokens: [{ text: "```", color: "#6272a4" }] },
+      { tokens: [] },
+      { tokens: [{ text: "## Build", color: "#bd93f9" }] },
+      { tokens: [{ text: "```bash", color: "#6272a4" }] },
+      { tokens: [{ text: "yarn build", color: "#50fa7b" }] },
       { tokens: [{ text: "```", color: "#6272a4" }] },
     ],
   },
@@ -658,12 +763,22 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
     lang: "json",
     lines: [
       { tokens: [{ text: "{", color: "#f8f8f2" }] },
-      { tokens: [{ text: '  "compilerOptions"', color: "#f1fa8c" }, { text: ": {", color: "#f8f8f2" }] },
-      { tokens: [{ text: '    "target"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"ES2020"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
-      { tokens: [{ text: '    "jsx"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"react-jsx"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
-      { tokens: [{ text: '    "strict"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: "true", color: "#bd93f9" }, { text: ",", color: "#f8f8f2" }] },
-      { tokens: [{ text: '    "moduleResolution"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"bundler"', color: "#50fa7b" }] },
-      { tokens: [{ text: "  }", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "files"', color: "#f1fa8c" }, { text: ": [],", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "references"', color: "#f1fa8c" }, { text: ": [", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    { "path"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"./tsconfig.app.json"', color: "#50fa7b" }, { text: " },", color: "#f8f8f2" }] },
+      { tokens: [{ text: '    { "path"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"./tsconfig.node.json"', color: "#50fa7b" }, { text: " }", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  ]", color: "#f8f8f2" }] },
+      { tokens: [{ text: "}", color: "#f8f8f2" }] },
+      { tokens: [] },
+      { tokens: [{ text: "// tsconfig.app.json (compilerOptions)", color: "#6272a4" }] },
+      { tokens: [{ text: "{", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "target"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"ES2020"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "lib"', color: "#f1fa8c" }, { text: ": [", color: "#f8f8f2" }, { text: '"ES2020"', color: "#50fa7b" }, { text: ", ", color: "#f8f8f2" }, { text: '"DOM"', color: "#50fa7b" }, { text: ", ", color: "#f8f8f2" }, { text: '"DOM.Iterable"', color: "#50fa7b" }, { text: "],", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "module"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"ESNext"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "jsx"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"react-jsx"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "strict"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: "true", color: "#bd93f9" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "moduleResolution"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: '"bundler"', color: "#50fa7b" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: '  "skipLibCheck"', color: "#f1fa8c" }, { text: ": ", color: "#f8f8f2" }, { text: "true", color: "#bd93f9" }] },
       { tokens: [{ text: "}", color: "#f8f8f2" }] },
     ],
   },
@@ -677,6 +792,11 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
       { tokens: [{ text: "  plugins:", color: "#8be9fd" }, { text: " [", color: "#f8f8f2" }, { text: "react", color: "#50fa7b" }, { text: "()],", color: "#f8f8f2" }] },
       { tokens: [{ text: "  server:", color: "#8be9fd" }, { text: " {", color: "#f8f8f2" }] },
       { tokens: [{ text: "    port:", color: "#8be9fd" }, { text: " ", color: "#f8f8f2" }, { text: "5173", color: "#bd93f9" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    open:", color: "#8be9fd" }, { text: " ", color: "#f8f8f2" }, { text: "true", color: "#bd93f9" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  },", color: "#f8f8f2" }] },
+      { tokens: [{ text: "  build:", color: "#8be9fd" }, { text: " {", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    outDir:", color: "#8be9fd" }, { text: ' "dist"', color: "#f1fa8c" }, { text: ",", color: "#f8f8f2" }] },
+      { tokens: [{ text: "    sourcemap:", color: "#8be9fd" }, { text: " ", color: "#f8f8f2" }, { text: "false", color: "#bd93f9" }, { text: ",", color: "#f8f8f2" }] },
       { tokens: [{ text: "  },", color: "#f8f8f2" }] },
       { tokens: [{ text: "});", color: "#f8f8f2" }] },
     ],
@@ -685,15 +805,23 @@ const fileContents: Record<string, { lang: string; lines: { tokens: { text: stri
     lang: "lock",
     lines: [
       { tokens: [{ text: "# yarn lockfile v1", color: "#6272a4" }] },
+      { tokens: [{ text: "# This file is generated automatically.", color: "#6272a4" }] },
       { tokens: [] },
-      { tokens: [{ text: '"react@^18.3.0":', color: "#f1fa8c" }] },
-      { tokens: [{ text: "  version", color: "#8be9fd" }, { text: ' "18.3.1"', color: "#50fa7b" }] },
-      { tokens: [{ text: "  resolved", color: "#8be9fd" }, { text: ' "https://registry.npmjs.org/react/-/react-18.3.1.tgz"', color: "#50fa7b" }] },
-      { tokens: [{ text: "  integrity", color: "#8be9fd" }, { text: " sha512-...", color: "#6272a4" }] },
+      { tokens: [{ text: '"lucide-react@^0.383.0":', color: "#f1fa8c" }] },
+      { tokens: [{ text: "  version", color: "#8be9fd" }, { text: ' "0.383.0"', color: "#50fa7b" }] },
+      { tokens: [{ text: "  resolved", color: "#8be9fd" }, { text: ' "https://registry.yarnpkg.com/lucide-react/-/lucide-react-0.383.0.tgz"', color: "#50fa7b" }] },
       { tokens: [] },
-      { tokens: [{ text: '"motion@^11.0.0":', color: "#f1fa8c" }] },
+      { tokens: [{ text: '"motion@^11.2.0":', color: "#f1fa8c" }] },
       { tokens: [{ text: "  version", color: "#8be9fd" }, { text: ' "11.2.0"', color: "#50fa7b" }] },
-      { tokens: [{ text: "  resolved", color: "#8be9fd" }, { text: ' "https://registry.npmjs.org/motion/-/motion-11.2.0.tgz"', color: "#50fa7b" }] },
+      { tokens: [{ text: "  resolved", color: "#8be9fd" }, { text: ' "https://registry.yarnpkg.com/motion/-/motion-11.2.0.tgz"', color: "#50fa7b" }] },
+      { tokens: [] },
+      { tokens: [{ text: '"react@^18.3.1":', color: "#f1fa8c" }] },
+      { tokens: [{ text: "  version", color: "#8be9fd" }, { text: ' "18.3.1"', color: "#50fa7b" }] },
+      { tokens: [{ text: "  resolved", color: "#8be9fd" }, { text: ' "https://registry.yarnpkg.com/react/-/react-18.3.1.tgz"', color: "#50fa7b" }] },
+      { tokens: [] },
+      { tokens: [{ text: '"vite@^6.0.5":', color: "#f1fa8c" }] },
+      { tokens: [{ text: "  version", color: "#8be9fd" }, { text: ' "6.0.5"', color: "#50fa7b" }] },
+      { tokens: [{ text: "  resolved", color: "#8be9fd" }, { text: ' "https://registry.yarnpkg.com/vite/-/vite-6.0.5.tgz"', color: "#50fa7b" }] },
     ],
   },
 };
@@ -870,6 +998,114 @@ const VSCodeEditor = () => {
   );
 };
 
+const ScrollRow = ({ images, direction, color }: { images: string[]; direction: "left" | "right"; color: string }) => {
+  const doubled = [...images, ...images, ...images];
+  const duration = 22;
+  return (
+    <div className="overflow-hidden w-full" style={{ maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)" }}>
+      <motion.div
+        className="flex gap-1.5"
+        style={{ width: "max-content" }}
+        animate={{ x: direction === "left" ? ["0%", "-33.33%"] : ["-33.33%", "0%"] }}
+        transition={{ duration, repeat: Infinity, ease: "linear" }}
+      >
+        {doubled.map((src, i) => (
+          <div key={i} className="flex-shrink-0 overflow-hidden" style={{ width: 130, height: 78, border: `1px solid ${color}33` }}>
+            <img src={src} alt="" className="w-full h-full object-cover" style={{ filter: "grayscale(100%) contrast(0.9)", opacity: 0.75 }} referrerPolicy="no-referrer" />
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+};
+
+const HobbyNode = ({ hobby, W, H, isDarkMode }: any) => {
+  const [hovered, setHovered] = useState(false);
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const [cardStyle, setCardStyle] = useState<React.CSSProperties>({});
+
+  const handleEnter = () => {
+    if (nodeRef.current) {
+      const rect = nodeRef.current.getBoundingClientRect();
+      const cardW = 520;
+      let left = rect.left + rect.width / 2 - cardW / 2;
+      if (left + cardW > window.innerWidth - 8) left = window.innerWidth - cardW - 8;
+      if (left < 8) left = 8;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const cardH = 260;
+      const top = spaceBelow > cardH + 8 ? rect.bottom + 6 : rect.top - cardH - 6;
+      setCardStyle({ position: "fixed", top, left, width: cardW, zIndex: 999998 });
+    }
+    setHovered(true);
+  };
+
+  const row1 = hobby.images.slice(0, 3);
+  const row2 = hobby.images.slice(3, 6);
+  const row3 = hobby.images.slice(6, 9);
+
+  return (
+    <>
+      <motion.div
+        ref={nodeRef}
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.5 }}
+        style={{ position: "absolute", left: `${(hobby.x / W) * 100}%`, top: `${(hobby.y / H) * 100}%`, transform: "translate(-50%, -50%)", zIndex: 50 }}
+        onMouseEnter={handleEnter}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <motion.div
+          className="flex flex-col items-center gap-1.5 px-3 py-2.5 cursor-default whitespace-nowrap"
+          style={{ background: "var(--color-bg)", border: `1.5px solid ${hobby.color}`, boxShadow: `2px 2px 0 0 ${hobby.color}` }}
+          animate={{ boxShadow: [`2px 2px 0 0 ${hobby.color}44`, `3px 3px 0 0 ${hobby.color}bb`, `2px 2px 0 0 ${hobby.color}44`] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <div style={{ color: hobby.color }}>{hobby.icon}</div>
+          <span className="font-mono text-[9px] uppercase tracking-widest font-bold" style={{ color: hobby.color }}>{hobby.name}</span>
+        </motion.div>
+      </motion.div>
+
+      {hovered && (
+        <div style={cardStyle} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+            style={{
+              background: isDarkMode ? "rgba(20,20,20,0.96)" : "rgba(250,250,248,0.97)",
+              border: `1.5px solid ${hobby.color}55`,
+              boxShadow: `0 8px 32px ${hobby.color}22`,
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b" style={{ borderColor: `${hobby.color}22` }}>
+              <div style={{ color: hobby.color }}>{hobby.icon}</div>
+              <span className="font-mono text-[10px] uppercase tracking-widest font-bold" style={{ color: hobby.color }}>{hobby.name}</span>
+              <div className="flex-1" />
+              <span className="font-mono text-[8px] opacity-30 uppercase tracking-widest">// gallery</span>
+            </div>
+            {/* 3 scroll rows */}
+            <div className="flex flex-col gap-1.5 p-3">
+              <ScrollRow images={row1} direction="left" color={hobby.color} />
+              <ScrollRow images={row2} direction="right" color={hobby.color} />
+              <ScrollRow images={row3} direction="left" color={hobby.color} />
+            </div>
+            {/* Footer */}
+            <div className="px-4 py-2 border-t flex items-center gap-2" style={{ borderColor: `${hobby.color}22` }}>
+              <div className="flex gap-1">
+                {[0,1,2].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: hobby.color, opacity: 0.3 + i * 0.3 }} />)}
+              </div>
+              <span className="font-mono text-[8px] opacity-30">9 memories</span>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </>
+  );
+};
+
 const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode: boolean }) => {
   const fillInAnimation = {
     initial: { clipPath: "inset(0 100% 0 0)", opacity: 0 },
@@ -889,10 +1125,10 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
           </motion.div>
           <div className="absolute bottom-0 right-0 p-8 md:p-12 flex flex-col items-end z-40">
             <motion.div {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.2 }} className="relative">
-              <h1 className="text-[120px] md:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Fine</h1>
+              <h1 className="text-[120px] md:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Less</h1>
             </motion.div>
-            <motion.div {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.4 }} className="relative mt-[-10px] md:mt-[-20px]">
-              <h1 className="text-[120px] md:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Thought</h1>
+            <motion.div {...fillInAnimation} transition={{ ...fillInAnimation.transition, delay: 0.4 }} className="relative">
+              <h1 className="text-[120px] md:text-[200px] font-black tracking-tighter leading-[0.75] uppercase text-right [writing-mode:vertical-rl] md:[writing-mode:horizontal-tb]">Is More</h1>
             </motion.div>
           </div>
         </div>
@@ -939,11 +1175,11 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
     case "projects.json": {
       const [hoveredInfo, setHoveredInfo] = useState<{ project: any; rect: DOMRect } | null>(null);
       return (
-        <div className="relative w-full h-full ">
+        <div className="relative w-full h-full">
           <div className="w-full h-full p-24 pt-32 overflow-y-auto custom-scrollbar">
             <motion.div {...fillInAnimation} className="relative" style={{ zIndex: 40 }}>
               <h2 className="text-4xl font-black uppercase mb-12 tracking-tighter">Active Repositories</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16 ">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
                 {terminalProjects.map((project, i) => (
                   <ProjectItem key={project.name} project={project} index={i} isDarkMode={isDarkMode} onHover={setHoveredInfo} />
                 ))}
@@ -967,100 +1203,44 @@ const PageContent = ({ activePage, isDarkMode }: { activePage: Page; isDarkMode:
             <div className="px-24 pt-32 pb-4 flex-shrink-0">
               <h2 className="text-4xl font-black uppercase tracking-tighter">System Preferences</h2>
             </div>
-
-            {/* Canvas: all coords are pixel-perfect within this div */}
             <div className="relative flex-1 mx-24 mb-8" style={{ minHeight: 0 }}>
               {(() => {
-                // W=800 H=420 virtual canvas — nodes positioned by %
-                // Center box approx 100w × 48h, centered at (400, 210)
                 const W = 800, H = 420;
                 const cx = 400, cy = 210;
-
                 const hobbies = [
-                  { name: "Traveling", icon: <Plane size={16} />, x: 60, y: 40, color: isDarkMode ? "#50fa7b" : "#1a7f37" },
-                  { name: "Gaming", icon: <Gamepad2 size={16} />, x: 680, y: 40, color: isDarkMode ? "#ff79c6" : "#cf222e" },
-                  { name: "Anime", icon: <Tv size={16} />, x: 30, y: 340, color: isDarkMode ? "#8be9fd" : "#0550ae" },
-                  { name: "Movies", icon: <Film size={16} />, x: 710, y: 340, color: isDarkMode ? "#ffb86c" : "#9a6700" },
-                  { name: "Sleeping", icon: <Moon size={16} />, x: 340, y: 360, color: isDarkMode ? "#bd93f9" : "#8250df" },
+                  { name: "Traveling", icon: <Plane size={16} />, x: 60, y: 40, color: isDarkMode ? "#50fa7b" : "#1a7f37",
+                    images: ["https://picsum.photos/seed/t1/200/120","https://picsum.photos/seed/t2/200/120","https://picsum.photos/seed/t3/200/120","https://picsum.photos/seed/t4/200/120","https://picsum.photos/seed/t5/200/120","https://picsum.photos/seed/t6/200/120","https://picsum.photos/seed/t7/200/120","https://picsum.photos/seed/t8/200/120","https://picsum.photos/seed/t9/200/120"] },
+                  { name: "Gaming", icon: <Gamepad2 size={16} />, x: 680, y: 40, color: isDarkMode ? "#ff79c6" : "#cf222e",
+                    images: ["https://picsum.photos/seed/g1/200/120","https://picsum.photos/seed/g2/200/120","https://picsum.photos/seed/g3/200/120","https://picsum.photos/seed/g4/200/120","https://picsum.photos/seed/g5/200/120","https://picsum.photos/seed/g6/200/120","https://picsum.photos/seed/g7/200/120","https://picsum.photos/seed/g8/200/120","https://picsum.photos/seed/g9/200/120"] },
+                  { name: "Anime", icon: <Tv size={16} />, x: 30, y: 340, color: isDarkMode ? "#8be9fd" : "#0550ae",
+                    images: ["https://picsum.photos/seed/a1/200/120","https://picsum.photos/seed/a2/200/120","https://picsum.photos/seed/a3/200/120","https://picsum.photos/seed/a4/200/120","https://picsum.photos/seed/a5/200/120","https://picsum.photos/seed/a6/200/120","https://picsum.photos/seed/a7/200/120","https://picsum.photos/seed/a8/200/120","https://picsum.photos/seed/a9/200/120"] },
+                  { name: "Movies", icon: <Film size={16} />, x: 710, y: 340, color: isDarkMode ? "#ffb86c" : "#9a6700",
+                    images: ["https://picsum.photos/seed/m1/200/120","https://picsum.photos/seed/m2/200/120","https://picsum.photos/seed/m3/200/120","https://picsum.photos/seed/m4/200/120","https://picsum.photos/seed/m5/200/120","https://picsum.photos/seed/m6/200/120","https://picsum.photos/seed/m7/200/120","https://picsum.photos/seed/m8/200/120","https://picsum.photos/seed/m9/200/120"] },
+                  { name: "Sleeping", icon: <Moon size={16} />, x: 340, y: 360, color: isDarkMode ? "#bd93f9" : "#8250df",
+                    images: ["https://picsum.photos/seed/s1/200/120","https://picsum.photos/seed/s2/200/120","https://picsum.photos/seed/s3/200/120","https://picsum.photos/seed/s4/200/120","https://picsum.photos/seed/s5/200/120","https://picsum.photos/seed/s6/200/120","https://picsum.photos/seed/s7/200/120","https://picsum.photos/seed/s8/200/120","https://picsum.photos/seed/s9/200/120"] },
                 ];
-
-                // Node box is roughly 80w × 64h — path terminates at node center
-                // Orthogonal bus: center → horizontal to node.x → vertical to node.y
-                const buildPath = (nx: number, ny: number) =>
-                  `M ${cx} ${cy} L ${nx} ${cy} L ${nx} ${ny}`;
-
+                const buildPath = (nx: number, ny: number) => `M ${cx} ${cy} L ${nx} ${cy} L ${nx} ${ny}`;
                 return (
                   <>
-                    {/* SVG layer — same dimensions as container via 100%×100% */}
-                    <svg
-                      viewBox={`0 0 ${W} ${H}`}
-                      preserveAspectRatio="none"
-                      className="absolute inset-0 w-full h-full pointer-events-none"
-                    >
+                    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
                       {hobbies.map((h, i) => {
                         const path = buildPath(h.x, h.y);
                         return (
                           <g key={i}>
-                            {/* Faint base track */}
                             <path d={path} stroke={h.color} strokeWidth="1.5" fill="none" opacity="0.2" />
-                            {/* Animated dashed bus */}
-                            <motion.path
-                              d={path}
-                              stroke={h.color}
-                              strokeWidth="1.5"
-                              fill="none"
-                              strokeDasharray="6 6"
-                              initial={{ strokeDashoffset: 0 }}
-                              animate={{ strokeDashoffset: -72 }}
-                              transition={{ duration: 1.5 + i * 0.2, repeat: Infinity, ease: "linear", delay: i * 0.15 }}
-                              opacity="0.8"
-                            />
-                            {/* Elbow junction dot */}
+                            <motion.path d={path} stroke={h.color} strokeWidth="1.5" fill="none" strokeDasharray="6 6"
+                              initial={{ strokeDashoffset: 0 }} animate={{ strokeDashoffset: -72 }}
+                              transition={{ duration: 1.5 + i * 0.2, repeat: Infinity, ease: "linear", delay: i * 0.15 }} opacity="0.8" />
                             <circle cx={h.x} cy={cy} r="3.5" fill={h.color} opacity="0.7" />
-                            {/* Center junction dot */}
                             <circle cx={cx} cy={cy} r="3" fill={h.color} opacity="0.4" />
                           </g>
                         );
                       })}
-                      {/* Center box */}
                       <rect x={cx - 55} y={cy - 20} width={110} height={40} fill="currentColor" rx="1" className="text-ink" />
-                      <text x={cx} y={cy + 5} textAnchor="middle" fontSize="11" fontFamily="monospace" fontWeight="bold" letterSpacing="3" className="text-bg" fill="var(--color-bg)">HOBBIES</text>
+                      <text x={cx} y={cy + 5} textAnchor="middle" fontSize="11" fontFamily="monospace" fontWeight="bold" letterSpacing="3" fill="var(--color-bg)">HOBBIES</text>
                     </svg>
-
-                    {/* Hobby nodes — positioned using same % math as SVG viewBox */}
-                    {hobbies.map((hobby, i) => (
-                      <motion.div
-                        key={hobby.name}
-                        initial={{ opacity: 0, scale: 0.85 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.5 + i * 0.1 }}
-                        style={{
-                          position: "absolute",
-                          left: `${(hobby.x / W) * 100}%`,
-                          top: `${(hobby.y / H) * 100}%`,
-                          transform: "translate(-50%, -50%)",
-                        }}
-                      >
-                        <motion.div
-                          className="flex flex-col items-center gap-1.5 px-3 py-2.5 cursor-default whitespace-nowrap"
-                          style={{
-                            background: "var(--color-bg)",
-                            border: `1.5px solid ${hobby.color}`,
-                            boxShadow: `2px 2px 0 0 ${hobby.color}`,
-                          }}
-                          animate={{
-                            boxShadow: [
-                              `2px 2px 0 0 ${hobby.color}55`,
-                              `3px 3px 0 0 ${hobby.color}cc`,
-                              `2px 2px 0 0 ${hobby.color}55`,
-                            ]
-                          }}
-                          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
-                        >
-                          <div style={{ color: hobby.color }}>{hobby.icon}</div>
-                          <span className="font-mono text-[9px] uppercase tracking-widest font-bold" style={{ color: hobby.color }}>{hobby.name}</span>
-                        </motion.div>
-                      </motion.div>
+                    {hobbies.map((hobby) => (
+                      <HobbyNode key={hobby.name} hobby={hobby} W={W} H={H} isDarkMode={isDarkMode} />
                     ))}
                   </>
                 );
